@@ -1,0 +1,32 @@
+name: GEO Tracker
+
+on:
+  # Run daily at 9:00 AM UTC
+  schedule:
+    - cron: '0 9 * * *'
+  
+  # Allow manual triggering from Actions tab
+  workflow_dispatch:
+
+jobs:
+  track:
+    name: Track GEO Queries
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run GEO Tracker
+        run: node index.js
+        env:
+          PLAUSIBLE_DOMAIN: ${{ secrets.PLAUSIBLE_DOMAIN }}

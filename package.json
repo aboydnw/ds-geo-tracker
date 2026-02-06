@@ -1,0 +1,26 @@
+{
+  "name": "geo-tracker",
+  "version": "1.0.0",
+  "description": "Track geospatial queries and log events to Plausible Analytics",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test src/**/*.test.js"
+  },
+  "keywords": [
+    "geo",
+    "geospatial",
+    "analytics",
+    "plausible",
+    "tracking"
+  ],
+  "author": "Development Seed",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.4"
+  }
+}
