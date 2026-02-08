@@ -12,6 +12,7 @@ jobs:
   track:
     name: Track GEO Queries
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     
     steps:
       - name: Checkout repository
@@ -20,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       
       - name: Install dependencies
@@ -30,3 +31,4 @@ jobs:
         run: node index.js
         env:
           PLAUSIBLE_DOMAIN: ${{ secrets.PLAUSIBLE_DOMAIN }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}

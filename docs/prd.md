@@ -93,8 +93,8 @@ Establish the foundational GEO tracking system with daily scheduled runs via Git
 ### Epic 2: Full Features - Enhanced Monitoring
 Add operational reliability features including Slack notifications, dry-run mode, and improved error handling.
 
-### Epic 3: Future - Data Source Integrations
-Integrate real-time data sources like Google Trends, GitHub API, and custom analytics APIs to enrich tracking data.
+### Epic 3: GEO Visibility - LLM Prominence Tracking
+Measure Development Seed's visibility in AI-generated responses by querying LLMs and scoring prominence, starting with Perplexity Sonar and expanding to ChatGPT, Claude, and Gemini.
 
 ---
 
@@ -256,49 +256,53 @@ Integrate real-time data sources like Google Trends, GitHub API, and custom anal
 
 ---
 
-## Epic 3: Future - Data Source Integrations
+## Epic 3: GEO Visibility - LLM Prominence Tracking
 
-**Goal**: Enhance tracking with real data from external sources to provide actionable insights beyond simple event logging.
+**Goal**: Measure how prominently Development Seed and its products appear in AI-generated responses. Query LLMs with geospatial search terms, analyze responses for DS mentions and citations, score prominence, and send enriched events to a dedicated Plausible site. Start with Perplexity (which provides citations), then expand to ChatGPT, Claude, and Gemini.
 
-### Story 3.1: Google Trends Integration
-**As a** product manager,
-**I want** to track Google Trends interest levels for GEO queries,
-**so that** I can see actual search volume trends over time.
-
-**Acceptance Criteria:**
-1. Optional `google-trends-api` integration
-2. For each query, fetch 7-day interest data from Google Trends
-3. Include `interest_value` in Plausible event props
-4. Gracefully skip if Google Trends API fails (still send basic event)
-5. Rate limit requests to avoid Google blocking
-
----
-
-### Story 3.2: GitHub Stats Integration
-**As a** developer advocate,
-**I want** to track GitHub repository statistics for DS projects,
-**so that** I can correlate search interest with actual project engagement.
-
-**Acceptance Criteria:**
-1. Optional GitHub API integration for configured repositories
-2. Track: stars, forks, open issues for each repo
-3. Send separate `GEO_GitHub_Stats` event type
-4. Use `GITHUB_TOKEN` for authenticated requests (higher rate limits)
-5. Gracefully skip if GitHub API fails
-
----
-
-### Story 3.3: Data Source Convention
+### Story 3.1: Plausible Event Model for GEO Visibility
 **As a** developer,
-**I want** a consistent pattern for adding data sources,
-**so that** new integrations follow a predictable structure.
+**I want** the Plausible integration to support referrer and URL fields,
+**so that** LLM sources appear in the Sources dashboard and referenced DS pages appear in Top Pages.
 
 **Acceptance Criteria:**
-1. Data sources live in `src/sources/` directory
-2. Each source exports a standard interface: `{ name, enabled, fetchData }`
-3. Sources are explicitly imported in `src/sources/index.js` (no dynamic filesystem discovery)
-4. Sources can be enabled/disabled via environment variables
-5. Failed sources don't block other sources from running
+1. `sendEventToPlausible` accepts optional `referrer` and `url` parameters
+2. Referrer populates Plausible Sources (e.g., `perplexity.ai`)
+3. URL populates Plausible Top Pages (e.g., DS blog posts referenced by LLMs)
+4. Dedicated Plausible site separates GEO data from real website analytics
+5. Backward-compatible with existing event calls
+
+---
+
+### Story 3.2: Perplexity Sonar Integration
+**As a** content strategist,
+**I want** the tracker to query Perplexity Sonar and analyze responses for DS visibility,
+**so that** I can measure our prominence in AI-generated answers over time.
+
+**Acceptance Criteria:**
+1. Queries Perplexity Sonar API with each configured search term
+2. Analyzes response text for Development Seed and product mentions
+3. Parses citations and search results for `developmentseed.org` URLs
+4. Calculates prominence score (0-100) based on mentions, position, recommendations, and citations
+5. Sends enriched events to Plausible with `referrer=perplexity.ai` and `url=<DS page>`
+6. Enabled via `PERPLEXITY_API_KEY`; skipped gracefully if not configured
+7. Rate limited and cost-tracked per run
+
+---
+
+### Story 3.3: Multi-LLM Expansion (ChatGPT, Claude, Gemini)
+**As a** content strategist,
+**I want** to track visibility across ChatGPT, Claude, and Gemini in addition to Perplexity,
+**so that** I can compare our prominence across different AI platforms.
+
+**Acceptance Criteria:**
+1. Shared response analysis module reused across all LLM sources
+2. ChatGPT integration via OpenAI API
+3. Claude integration via Anthropic API
+4. Gemini integration via Google AI API
+5. Each LLM sets its own referrer for Plausible Sources comparison
+6. Each source independently enabled/disabled via API key environment variable
+7. Plausible Sources dashboard shows side-by-side LLM comparison
 
 ---
 
