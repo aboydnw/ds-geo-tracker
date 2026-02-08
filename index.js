@@ -10,10 +10,7 @@ import 'dotenv/config';
 import { sendEventToPlausible } from './src/plausible.js';
 import { analyzeResponse } from './src/analysis.js';
 import queries from './src/queries.js';
-import perplexity from './src/sources/perplexity.js';
-
-/** All configured LLM sources. Add new sources here as they are implemented. */
-const SOURCES = [perplexity];
+import { ALL_SOURCES } from './src/sources/index.js';
 
 /**
  * Delay execution for specified milliseconds.
@@ -126,7 +123,7 @@ async function trackGEOQueries() {
   console.log(`GEO Tracker started at ${startTime.toISOString()}`);
   console.log(`Domain: ${process.env.PLAUSIBLE_DOMAIN || '(not configured)'}`);
   console.log(`Queries: ${queries.length}`);
-  console.log(`Sources: ${SOURCES.map((s) => s.name).join(', ')}`);
+  console.log(`Sources: ${ALL_SOURCES.map((s) => s.name).join(', ')}`);
   console.log('='.repeat(60));
   console.log('');
 
@@ -144,11 +141,11 @@ async function trackGEOQueries() {
   }
 
   // Filter to enabled sources
-  const enabledSources = SOURCES.filter((s) => s.enabled());
+  const enabledSources = ALL_SOURCES.filter((s) => s.enabled());
   if (enabledSources.length === 0) {
     console.warn('WARNING: No LLM sources are enabled. Check your API key environment variables.');
     console.warn('Skipped sources:');
-    for (const s of SOURCES) {
+    for (const s of ALL_SOURCES) {
       console.warn(`  - ${s.name}: not enabled`);
     }
     process.exitCode = 1;
@@ -184,7 +181,7 @@ async function trackGEOQueries() {
   console.log('='.repeat(60));
   console.log('GEO Tracker Summary');
   console.log('='.repeat(60));
-  console.log(`Sources:        ${enabledSources.length}/${SOURCES.length} enabled`);
+  console.log(`Sources:        ${enabledSources.length}/${ALL_SOURCES.length} enabled`);
   console.log(`Total queries:  ${queries.length * enabledSources.length}`);
   console.log(`Successful:     ${totalSuccess}`);
   console.log(`Failed:         ${totalFail}`);
