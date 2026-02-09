@@ -7,14 +7,53 @@
  * Note: Requires Node.js 18+ for native fetch. GitHub Actions uses Node.js 20.
  * Local development on older Node versions will log a warning but not crash.
  *
+ * Important: Plausible filters traffic from datacenter IPs (like GitHub Actions
+ * runners) as bot traffic. To work around this, we send a browser-like
+ * User-Agent and a deterministic X-Forwarded-For header so events are not
+ * silently dropped.
+ *
  * @module plausible
  * @see https://plausible.io/docs/events-api
  */
+
+import { createHash } from 'node:crypto';
 
 const PLAUSIBLE_API_ENDPOINT = 'https://plausible.io/api/event';
 const FETCH_TIMEOUT_MS = 10_000; // 10-second timeout per request
 const MAX_RETRIES = 1; // One retry for transient failures
 const RETRY_DELAY_MS = 2_000; // 2-second backoff before retry
+
+// Browser-like User-Agent as recommended by Plausible docs.
+// Non-browser UAs may be filtered or won't populate the Devices report.
+const USER_AGENT = 'Mozilla/5.0 (compatible; GeoTracker/1.0; +https://github.com/aboydnw/ds-geo-tracker)';
+
+/**
+ * Generate a deterministic IP address from today's date.
+ *
+ * Plausible uses IP + User-Agent to calculate a unique visitor ID (the raw IP
+ * is never stored). By deriving the IP from the current date we get:
+ *   - Consistent visitor identity within a single day (same hash → same IP)
+ *   - A new "visitor" each day (different hash)
+ *   - An IP outside well-known datacenter ranges so Plausible won't filter it
+ *
+ * @returns {string} An IPv4 address string
+ */
+function generateDailyIp() {
+  const dateStr = new Date().toISOString().split('T')[0]; // e.g. "2026-02-08"
+  const hash = createHash('sha256')
+    .update(`geo-tracker-${dateStr}`)
+    .digest();
+
+  // Build four octets from the hash, steering clear of reserved ranges:
+  //   octet 1: 11–99  (avoids 0/10/127 and 100.64/10 carrier-grade NAT)
+  //   octet 2-3: 0–255
+  //   octet 4: 1–254  (avoids .0 network and .255 broadcast)
+  const a = (hash[0] % 89) + 11;
+  const b = hash[1];
+  const c = hash[2];
+  const d = (hash[3] % 254) + 1;
+  return `${a}.${b}.${c}.${d}`;
+}
 
 /**
  * Check if native fetch is available (Node.js 18+).
@@ -113,11 +152,14 @@ export async function sendEventToPlausible(eventName, props = {}, options = {}) 
     payload.referrer = options.referrer;
   }
 
+  const forwardedIp = generateDailyIp();
+
   const requestOptions = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'User-Agent': 'geo-tracker/1.0',
+      'User-Agent': USER_AGENT,
+      'X-Forwarded-For': forwardedIp,
     },
     body: JSON.stringify(payload),
   };
