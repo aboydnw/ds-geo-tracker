@@ -19,3 +19,7 @@ npm-debug.log*
 
 # OS generated files
 Thumbs.db
+
+# Project docs and BMAD framework (local only)
+docs/
+.bmad-core/
