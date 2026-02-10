@@ -1,6 +1,6 @@
-import { describe, it, beforeEach, afterEach, mock } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { runTracker, buildPlausibleUrl, estimateCost } from './orchestrator.js';
+import { runTracker, estimateCost } from './orchestrator.js';
 
 // ============================================================
 // Helpers: mock sources and queries
@@ -33,27 +33,6 @@ function createMockQueries(count = 2) {
 }
 
 // ============================================================
-// buildPlausibleUrl — unit tests
-// ============================================================
-
-describe('buildPlausibleUrl', () => {
-  it('extracts path from a full URL', () => {
-    const url = buildPlausibleUrl('https://developmentseed.org/blog/titiler-v2', 'geo.ds.org');
-    assert.equal(url, 'https://geo.ds.org/blog/titiler-v2');
-  });
-
-  it('returns domain root for invalid URL', () => {
-    const url = buildPlausibleUrl('not a url', 'geo.ds.org');
-    assert.equal(url, 'https://geo.ds.org/');
-  });
-
-  it('handles URL with trailing slash', () => {
-    const url = buildPlausibleUrl('https://developmentseed.org/', 'geo.ds.org');
-    assert.equal(url, 'https://geo.ds.org/');
-  });
-});
-
-// ============================================================
 // estimateCost — unit tests
 // ============================================================
 
@@ -84,33 +63,34 @@ describe('estimateCost', () => {
 // ============================================================
 
 describe('runTracker', () => {
-  let originalDomain;
-
-  beforeEach(() => {
-    originalDomain = process.env.PLAUSIBLE_DOMAIN;
-    process.env.PLAUSIBLE_DOMAIN = 'geo.test.org';
-  });
-
-  afterEach(() => {
-    if (originalDomain !== undefined) {
-      process.env.PLAUSIBLE_DOMAIN = originalDomain;
-    } else {
-      delete process.env.PLAUSIBLE_DOMAIN;
-    }
-  });
-
   it('processes 2 queries × 2 sources = 4 events', async () => {
     const queries = createMockQueries(2);
     const source1 = createMockSource({ name: 'Source1' });
     const source2 = createMockSource({ name: 'Source2' });
 
-    const results = await runTracker(queries, [source1, source2], 'geo.test.org');
+    const results = await runTracker(queries, [source1, source2]);
 
     assert.equal(results.totalEvents, 4);
-    // Success count depends on Plausible being reachable, but events were attempted
-    assert.equal(results.totalEvents, results.totalSuccess + results.totalFail);
+    assert.equal(results.totalSuccess, 4);
+    assert.equal(results.totalFail, 0);
     assert.ok(results.perSource['Source1'], 'Should have Source1 breakdown');
     assert.ok(results.perSource['Source2'], 'Should have Source2 breakdown');
+  });
+
+  it('returns detailed rows for each successful query', async () => {
+    const queries = createMockQueries(2);
+    const source = createMockSource({ name: 'TestSource' });
+
+    const results = await runTracker(queries, [source]);
+
+    assert.equal(results.rows.length, 2);
+    assert.equal(results.rows[0].source, 'TestSource');
+    assert.equal(results.rows[0].query_name, 'VEDA Dashboard');
+    assert.equal(results.rows[1].query_name, 'titiler');
+    assert.ok(results.rows[0].date.match(/^\d{4}-\d{2}-\d{2}$/), 'Date should be YYYY-MM-DD');
+    assert.equal(typeof results.rows[0].prominence_score, 'number');
+    assert.equal(typeof results.rows[0].mentioned, 'boolean');
+    assert.equal(typeof results.rows[0].tokens, 'number');
   });
 
   it('isolates errors: one source failure does not block others', async () => {
@@ -122,15 +102,19 @@ describe('runTracker', () => {
     });
     const goodSource = createMockSource({ name: 'GoodSource' });
 
-    const results = await runTracker(queries, [failingSource, goodSource], 'geo.test.org');
+    const results = await runTracker(queries, [failingSource, goodSource]);
 
     // FailSource: 2 failures (one per query)
     assert.equal(results.perSource['FailSource'].fail, 2);
     assert.equal(results.perSource['FailSource'].success, 0);
 
     // GoodSource: should still process both queries
-    const goodResult = results.perSource['GoodSource'];
-    assert.equal(goodResult.success + goodResult.fail, 2);
+    assert.equal(results.perSource['GoodSource'].success, 2);
+    assert.equal(results.perSource['GoodSource'].fail, 0);
+
+    // Only good source rows are in the results
+    assert.equal(results.rows.length, 2);
+    assert.ok(results.rows.every((r) => r.source === 'GoodSource'));
   });
 
   it('handles single source failing on one query', async () => {
@@ -153,32 +137,36 @@ describe('runTracker', () => {
       },
     });
 
-    const results = await runTracker(queries, [flakySource], 'geo.test.org');
+    const results = await runTracker(queries, [flakySource]);
 
     assert.equal(results.perSource['FlakySource'].fail, 1);
-    // The other 2 queries should have been attempted (success or Plausible fail)
+    assert.equal(results.perSource['FlakySource'].success, 2);
     assert.equal(results.totalEvents, 3);
+    // Only 2 rows (the successful ones)
+    assert.equal(results.rows.length, 2);
   });
 
   it('handles empty sources array gracefully', async () => {
     const queries = createMockQueries(2);
 
-    const results = await runTracker(queries, [], 'geo.test.org');
+    const results = await runTracker(queries, []);
 
     assert.equal(results.totalEvents, 0);
     assert.equal(results.totalSuccess, 0);
     assert.equal(results.totalFail, 0);
     assert.equal(results.totalTokens, 0);
+    assert.equal(results.rows.length, 0);
   });
 
   it('handles empty queries array gracefully', async () => {
     const source = createMockSource({ name: 'Source1' });
 
-    const results = await runTracker([], [source], 'geo.test.org');
+    const results = await runTracker([], [source]);
 
     assert.equal(results.totalEvents, 0);
     assert.equal(results.perSource['Source1'].success, 0);
     assert.equal(results.perSource['Source1'].fail, 0);
+    assert.equal(results.rows.length, 0);
   });
 
   it('accumulates tokens and cost across sources', async () => {
@@ -204,21 +192,45 @@ describe('runTracker', () => {
       }),
     });
 
-    const results = await runTracker(queries, [source1, source2], 'geo.test.org');
+    const results = await runTracker(queries, [source1, source2]);
 
     assert.equal(results.totalTokens, 650);
     assert.ok(results.totalCost > 0, 'Should have nonzero cost');
     assert.equal(results.perSource['Perplexity'].tokens, 250);
     assert.equal(results.perSource['ChatGPT'].tokens, 400);
+    // Rows should include token counts
+    assert.equal(results.rows[0].tokens, 250);
+    assert.equal(results.rows[1].tokens, 400);
   });
 
   it('records duration', async () => {
     const queries = createMockQueries(1);
     const source = createMockSource({ name: 'Fast' });
 
-    const results = await runTracker(queries, [source], 'geo.test.org');
+    const results = await runTracker(queries, [source]);
 
     assert.ok(typeof results.duration === 'number');
     assert.ok(results.duration >= 0);
+  });
+
+  it('includes ds_pages as pipe-separated string in rows', async () => {
+    const queries = createMockQueries(1);
+    const source = createMockSource({
+      name: 'MultiCite',
+      query: async () => ({
+        content: 'Development Seed offers titiler and VEDA.',
+        citations: [
+          'https://developmentseed.org/blog/titiler-v2',
+          'https://developmentseed.org/projects/veda',
+        ],
+        searchResults: [],
+        usage: { promptTokens: 50, completionTokens: 200, totalTokens: 250 },
+      }),
+    });
+
+    const results = await runTracker(queries, [source]);
+
+    assert.ok(results.rows[0].ds_pages.includes('|'), 'Should pipe-separate multiple pages');
+    assert.ok(results.rows[0].ds_pages.includes('developmentseed.org'));
   });
 });

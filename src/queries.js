@@ -12,8 +12,7 @@
  * @property {string} id - Unique identifier in kebab-case (e.g., "veda-dashboard")
  * @property {string} name - Human-readable display name (e.g., "VEDA Dashboard")
  * @property {string[]} searchTerms - Related search terms for this query.
- *   In MVP: included in Plausible event props as metadata for reference.
- *   In Epic 3: actively queried against Google Trends API for search volume data.
+ *   The first term in the array is used as the prompt sent to each LLM source.
  * @property {string} category - Query category for grouping/filtering:
  *   - "product" - Development Seed products and tools
  *   - "technology" - Geospatial technologies and standards

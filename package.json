@@ -1,7 +1,7 @@
 {
   "name": "geo-tracker",
   "version": "1.0.0",
-  "description": "Track geospatial queries and log events to Plausible Analytics",
+  "description": "Track geospatial query prominence across LLMs and store results as CSV",
   "type": "module",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,7 @@
     "geo",
     "geospatial",
     "analytics",
-    "plausible",
+    "llm",
     "tracking"
   ],
   "author": "Development Seed",

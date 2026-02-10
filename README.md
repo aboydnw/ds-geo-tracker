@@ -1,22 +1,49 @@
 # GEO Tracker
 
-Automated tracking of geospatial-related search queries, logging events to [Plausible Analytics](https://plausible.io).
+Automated tracking of Development Seed's prominence across LLM-generated responses. Queries multiple AI platforms daily, analyzes responses for mentions and citations, and stores results as CSV for easy analysis.
 
 ## Overview
 
-This tool tracks interest in GEO-related technologies and products by sending custom events to Plausible Analytics on a daily schedule via GitHub Actions.
+This tool measures how prominently Development Seed and its products appear in AI-generated answers by:
+
+1. Querying LLMs (Perplexity, ChatGPT, Gemini, Claude) with geospatial search terms
+2. Analyzing responses for mentions, citations, and recommendation language
+3. Scoring prominence (0-100) based on multiple factors
+4. Appending results to `data/results.csv` — committed back to the repo automatically
 
 **Tracked queries include:**
 - Development Seed products (VEDA Dashboard, titiler)
 - Geospatial technologies (STAC, Cloud-Optimized GeoTIFF)
 - Industry trends (Satellite Imagery, Climate Data)
 
+## Data Output
+
+Results are stored in `data/results.csv` with these columns:
+
+| Column | Description |
+|--------|-------------|
+| `date` | Run date (YYYY-MM-DD) |
+| `source` | LLM source (Perplexity, ChatGPT, Gemini, Claude) |
+| `query_name` | Human-readable query name |
+| `query_id` | Machine-readable query ID |
+| `category` | Query category (product, technology, trend, organization) |
+| `prominence_score` | 0-100 score based on mention position, citations, recommendations |
+| `mentioned` | Whether Development Seed was mentioned |
+| `recommended` | Whether DS was recommended/endorsed |
+| `position` | Position of first mention (early/middle/late/none) |
+| `citation_count` | Number of DS page citations found |
+| `data_source` | Source type: `web` (search-grounded) or `training` (knowledge only) |
+| `ds_pages` | Pipe-separated DS page URLs cited |
+| `tokens` | Total tokens used for this query |
+
+The CSV can be opened directly in Google Sheets, Excel, or loaded into any analysis tool.
+
 ## Setup
 
 ### Prerequisites
 
 - Node.js 20 LTS
-- A [Plausible Analytics](https://plausible.io) account with your domain configured
+- One or more LLM API keys (see below)
 
 ### Local Development
 
@@ -34,7 +61,7 @@ This tool tracks interest in GEO-related technologies and products by sending cu
 3. Create environment file:
    ```bash
    cp .env.example .env
-   # Edit .env and set PLAUSIBLE_DOMAIN=yourdomain.com
+   # Edit .env and add your API keys
    ```
 
 4. Run the tracker:
@@ -42,17 +69,24 @@ This tool tracks interest in GEO-related technologies and products by sending cu
    node index.js
    ```
 
+   Results are written to `data/results.csv`.
+
 ### GitHub Actions (Automated Daily Runs)
 
-The tracker runs automatically every day at 9:00 AM UTC via GitHub Actions.
+The tracker runs automatically every day at 9:00 AM UTC via GitHub Actions. After each run, the updated CSV is committed back to the repository.
 
-**Required Secret:**
+**Required Secrets:**
 
-Configure in your repository: Settings → Secrets and variables → Actions → New repository secret
+Configure in your repository: Settings > Secrets and variables > Actions > New repository secret
 
-| Secret | Description | Example |
-|--------|-------------|---------|
-| `PLAUSIBLE_DOMAIN` | Your Plausible domain | `developmentseed.org` |
+| Secret | Description | Required? |
+|--------|-------------|-----------|
+| `PERPLEXITY_API_KEY` | Perplexity Sonar API key | At least one |
+| `OPENAI_API_KEY` | OpenAI API key (ChatGPT) | At least one |
+| `GOOGLE_AI_API_KEY` | Google AI API key (Gemini) | At least one |
+| `ANTHROPIC_API_KEY` | Anthropic API key (Claude) | At least one |
+
+At least one API key must be configured for the tracker to produce results. Sources without keys are gracefully skipped.
 
 **Manual Trigger:**
 
@@ -91,14 +125,24 @@ Use [crontab.guru](https://crontab.guru) to build cron expressions.
 ```
 geo-tracker/
 ├── .github/workflows/
-│   └── geo-tracker.yml    # GitHub Actions workflow
+│   └── geo-tracker.yml       # GitHub Actions workflow (daily run + CSV commit)
+├── data/
+│   └── results.csv           # Tracking results (auto-updated by CI)
 ├── src/
-│   ├── plausible.js       # Plausible API client
-│   └── queries.js         # Query configuration
-├── index.js               # Main entry point
+│   ├── analysis.js           # Response analysis & prominence scoring
+│   ├── csv-store.js          # CSV storage module
+│   ├── orchestrator.js       # Core tracking loop
+│   ├── queries.js            # Query configuration
+│   └── sources/
+│       ├── index.js          # Source registry
+│       ├── perplexity.js     # Perplexity Sonar client
+│       ├── chatgpt.js        # OpenAI ChatGPT client
+│       ├── gemini.js         # Google Gemini client
+│       └── claude.js         # Anthropic Claude client
+├── index.js                  # Main entry point
 ├── package.json
-├── .env.example           # Environment template
-└── .nvmrc                 # Node.js version
+├── .env.example              # Environment template
+└── .nvmrc                    # Node.js version (20)
 ```
 
 ## License

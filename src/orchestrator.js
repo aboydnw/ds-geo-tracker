@@ -4,10 +4,12 @@
  * Core tracking loop extracted for testability. Accepts queries and sources
  * as arguments (no side effects, no process.exitCode, no dotenv).
  *
+ * Returns detailed per-event results that the caller can persist to CSV
+ * or any other storage backend.
+ *
  * @module orchestrator
  */
 
-import { sendEventToPlausible } from './plausible.js';
 import { analyzeResponse } from './analysis.js';
 
 /**
@@ -20,26 +22,26 @@ function delay(ms) {
 }
 
 /**
- * Build the Plausible `url` for a cited DS page.
- * Uses path-based encoding: the tracker domain as host + the cited page's path.
- *
- * @param {string} dsPageUrl - A full URL like "https://developmentseed.org/blog/titiler-v2"
- * @param {string} domain - The Plausible domain (e.g., "geo.developmentseed.org")
- * @returns {string}
+ * @typedef {Object} EventRow
+ * @property {string} date - ISO date string (YYYY-MM-DD)
+ * @property {string} source - LLM source name
+ * @property {string} query_name - Human-readable query name
+ * @property {string} query_id - Machine-readable query ID
+ * @property {string} category - Query category
+ * @property {number} prominence_score - 0-100 prominence score
+ * @property {boolean} mentioned - Whether DS was mentioned
+ * @property {boolean} recommended - Whether DS was recommended
+ * @property {string} position - Position of first mention (early/middle/late/none)
+ * @property {number} citation_count - Number of DS citations found
+ * @property {string} data_source - Source type (web/training)
+ * @property {string} ds_pages - Pipe-separated list of DS page URLs
+ * @property {number} tokens - Total tokens used for this query
  */
-function buildPlausibleUrl(dsPageUrl, domain) {
-  try {
-    const parsed = new URL(dsPageUrl);
-    return `https://${domain}${parsed.pathname}`;
-  } catch {
-    return `https://${domain}/`;
-  }
-}
 
 /**
  * @typedef {Object} SourceResult
- * @property {number} success - Number of successful events
- * @property {number} fail - Number of failed events
+ * @property {number} success - Number of successful queries
+ * @property {number} fail - Number of failed queries
  * @property {number} tokens - Total tokens used
  * @property {number} cost - Estimated cost in USD
  */
@@ -52,6 +54,7 @@ function buildPlausibleUrl(dsPageUrl, domain) {
  * @property {number} totalTokens - Total tokens across all sources
  * @property {number} totalCost - Estimated total cost in USD
  * @property {Object<string, SourceResult>} perSource - Breakdown per source name
+ * @property {EventRow[]} rows - Detailed per-event results for storage
  * @property {number} duration - Duration in seconds
  */
 
@@ -76,17 +79,18 @@ function estimateCost(sourceName, totalTokens) {
 }
 
 /**
- * Query a single LLM source for all configured queries and send results to Plausible.
+ * Query a single LLM source for all configured queries and collect results.
  *
  * @param {Object} source - LLM source object
  * @param {Array} queryList - Queries to process
- * @param {string} domain - Plausible domain
- * @returns {Promise<SourceResult>}
+ * @param {string} dateStr - ISO date string for this run
+ * @returns {Promise<{sourceResult: SourceResult, rows: EventRow[]}>}
  */
-async function trackSource(source, queryList, domain) {
+async function trackSource(source, queryList, dateStr) {
   let success = 0;
   let fail = 0;
   let totalTokens = 0;
+  const rows = [];
 
   for (let i = 0; i < queryList.length; i++) {
     const query = queryList[i];
@@ -98,7 +102,8 @@ async function trackSource(source, queryList, domain) {
     try {
       // Query the LLM
       const result = await source.query(searchTerm);
-      totalTokens += result.usage.totalTokens;
+      const queryTokens = result.usage.totalTokens;
+      totalTokens += queryTokens;
 
       // Analyze the response
       const analysis = analyzeResponse(result);
@@ -109,33 +114,24 @@ async function trackSource(source, queryList, domain) {
         console.log(`    DS pages: ${analysis.dsPages.join(', ')}`);
       }
 
-      // Send enriched event to Plausible
-      const plausibleUrl = analysis.dsPages.length > 0
-        ? buildPlausibleUrl(analysis.dsPages[0], domain)
-        : `https://${domain}/`;
-
-      const eventSuccess = await sendEventToPlausible('LLM_Prominence', {
+      // Collect the result row
+      rows.push({
+        date: dateStr,
+        source: source.name,
         query_name: query.name,
         query_id: query.id,
         category: query.category,
-        prominence_score: String(analysis.prominenceScore),
-        mentioned: String(analysis.mentioned),
-        recommended: String(analysis.recommended),
-        position: String(analysis.position),
-        citation_count: String(analysis.citationCount),
+        prominence_score: analysis.prominenceScore,
+        mentioned: analysis.mentioned,
+        recommended: analysis.recommended,
+        position: analysis.position,
+        citation_count: analysis.citationCount,
         data_source: source.dataSource,
-        original_url: analysis.dsPages[0] || '',
-      }, {
-        referrer: source.referrer,
-        url: plausibleUrl,
+        ds_pages: analysis.dsPages.join(' | '),
+        tokens: queryTokens,
       });
 
-      if (eventSuccess) {
-        success++;
-      } else {
-        fail++;
-        console.log(`    Warning: Plausible event failed for "${query.name}"`);
-      }
+      success++;
     } catch (error) {
       fail++;
       console.error(`    Error querying ${source.name} for "${query.name}": ${error.message}`);
@@ -148,23 +144,28 @@ async function trackSource(source, queryList, domain) {
   }
 
   const cost = estimateCost(source.name, totalTokens);
-  return { success, fail, tokens: totalTokens, cost };
+  return {
+    sourceResult: { success, fail, tokens: totalTokens, cost },
+    rows,
+  };
 }
 
 /**
  * Run the GEO tracker across all provided queries and sources.
  *
  * This is the core orchestration function. It has no side effects
- * (no process.exitCode, no dotenv loading) — the caller handles those.
+ * (no process.exitCode, no dotenv loading, no file I/O) — the caller
+ * handles persistence and exit codes.
  *
  * @param {Array} queries - Array of GeoQuery objects
  * @param {Array} sources - Array of enabled LLM source objects
- * @param {string} domain - Plausible domain string
  * @returns {Promise<TrackerResults>}
  */
-export async function runTracker(queries, sources, domain) {
+export async function runTracker(queries, sources) {
   const startTime = Date.now();
+  const dateStr = new Date().toISOString().split('T')[0]; // e.g. "2026-02-09"
   const perSource = {};
+  const allRows = [];
 
   let totalSuccess = 0;
   let totalFail = 0;
@@ -174,15 +175,16 @@ export async function runTracker(queries, sources, domain) {
   for (const source of sources) {
     console.log(`--- ${source.name} (${source.dataSource}) ---`);
 
-    const result = await trackSource(source, queries, domain);
+    const { sourceResult, rows } = await trackSource(source, queries, dateStr);
 
-    perSource[source.name] = result;
-    totalSuccess += result.success;
-    totalFail += result.fail;
-    totalTokens += result.tokens;
-    totalCost += result.cost;
+    perSource[source.name] = sourceResult;
+    allRows.push(...rows);
+    totalSuccess += sourceResult.success;
+    totalFail += sourceResult.fail;
+    totalTokens += sourceResult.tokens;
+    totalCost += sourceResult.cost;
 
-    console.log(`  Tokens: ${result.tokens} | Cost: ~$${result.cost.toFixed(4)} | ${result.success}/${result.success + result.fail} succeeded`);
+    console.log(`  Tokens: ${sourceResult.tokens} | Cost: ~$${sourceResult.cost.toFixed(4)} | ${sourceResult.success}/${sourceResult.success + sourceResult.fail} succeeded`);
     console.log('');
   }
 
@@ -195,9 +197,10 @@ export async function runTracker(queries, sources, domain) {
     totalTokens,
     totalCost,
     perSource,
+    rows: allRows,
     duration,
   };
 }
 
 // Export internals for testing
-export { buildPlausibleUrl, estimateCost, trackSource };
+export { estimateCost, trackSource };
