@@ -1,32 +1,4 @@
-date,source,query_name,query_id,category,prominence_score,mentioned,recommended,position,citation_count,data_source,ds_pages,tokens
-2026-02-10,Perplexity,VEDA Dashboard,veda-dashboard,product,80,true,true,1,1,web,https://developmentseed.org/ospd/,406
-2026-02-10,Perplexity,titiler,titiler,product,70,true,false,1,2,web,https://developmentseed.org/titiler/ | https://developmentseed.org/titiler-cmr/dev/,437
-2026-02-10,Perplexity,STAC (Spatio-Temporal Asset Catalog),stac,technology,0,false,false,0,0,web,,268
-2026-02-10,Perplexity,Cloud-Optimized GeoTIFF,cog,technology,0,false,false,0,0,web,,319
-2026-02-10,Perplexity,Satellite Imagery,satellite-imagery,trend,0,false,false,0,0,web,,602
-2026-02-10,Perplexity,Climate Data,climate-data,trend,0,false,false,0,0,web,,446
-2026-02-10,Perplexity,Development Seed,development-seed,organization,60,true,false,1,1,web,https://developmentseed.org,256
-2026-02-10,Gemini,VEDA Dashboard,veda-dashboard,product,45,true,false,1,0,web,,469
-2026-02-10,Gemini,titiler,titiler,product,45,true,false,1,0,web,,103
-2026-02-10,Gemini,STAC (Spatio-Temporal Asset Catalog),stac,technology,0,false,false,0,0,web,,191
-2026-02-10,Gemini,Cloud-Optimized GeoTIFF,cog,technology,0,false,false,0,0,web,,124
-2026-02-10,Gemini,Satellite Imagery,satellite-imagery,trend,0,false,false,0,0,web,,649
-2026-02-10,Gemini,Climate Data,climate-data,trend,0,false,false,0,0,web,,366
-2026-02-10,Gemini,Development Seed,development-seed,organization,45,true,false,1,0,web,,235
-2026-02-10,ChatGPT,VEDA Dashboard,veda-dashboard,product,38,true,false,2,0,web,,340
-2026-02-10,ChatGPT,titiler,titiler,product,45,true,false,1,0,web,,523
-2026-02-10,ChatGPT,STAC (Spatio-Temporal Asset Catalog),stac,technology,0,false,false,0,0,web,,334
-2026-02-10,ChatGPT,Cloud-Optimized GeoTIFF,cog,technology,0,false,false,0,0,web,,359
-2026-02-10,ChatGPT,Satellite Imagery,satellite-imagery,trend,0,false,false,0,0,web,,459
-2026-02-10,ChatGPT,Climate Data,climate-data,trend,0,false,false,0,0,web,,353
-2026-02-10,ChatGPT,Development Seed,development-seed,organization,45,true,false,1,0,web,,391
-2026-02-10,Claude,VEDA Dashboard,veda-dashboard,product,45,true,false,1,0,training,,386
-2026-02-10,Claude,titiler,titiler,product,45,true,false,1,0,training,,926
-2026-02-10,Claude,STAC (Spatio-Temporal Asset Catalog),stac,technology,0,false,false,0,0,training,,277
-2026-02-10,Claude,Cloud-Optimized GeoTIFF,cog,technology,0,false,false,0,0,training,,288
-2026-02-10,Claude,Satellite Imagery,satellite-imagery,trend,0,false,false,0,0,training,,503
-2026-02-10,Claude,Climate Data,climate-data,trend,0,false,false,0,0,training,,280
-2026-02-10,Claude,Development Seed,development-seed,organization,45,true,false,1,0,training,,319
+date,source,query_name,query_id,category,search_term,prominence_score,mentioned,recommended,position,citation_count,data_source,ds_pages,tokens
 2026-02-10,Perplexity,lonboard,lonboard,product,What Python libraries can I use to create a dynamic map tile server?,45,true,false,1,0,web,,436
 2026-02-10,Perplexity,lonboard,lonboard,product,How can I view large vector datasets in a jupyter notebook?,0,false,false,0,0,web,,474
 2026-02-10,Perplexity,titiler,titiler,product,What is titiler and how does it serve map tiles from cloud-optimized geotiffs?,70,true,false,1,2,web,https://developmentseed.org/titiler/ | https://developmentseed.org/titiler/user_guide/getting_started/,396
