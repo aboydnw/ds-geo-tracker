@@ -23,3 +23,4 @@ Thumbs.db
 # Project docs and BMAD framework (local only)
 docs/
 .bmad-core/
+.cursor/rules/bmad/
