@@ -28,6 +28,7 @@ function delay(ms) {
  * @property {string} query_name - Human-readable query name
  * @property {string} query_id - Machine-readable query ID
  * @property {string} category - Query category
+ * @property {string} search_term - The exact prompt sent to the LLM
  * @property {number} prominence_score - 0-100 prominence score
  * @property {boolean} mentioned - Whether DS was mentioned
  * @property {boolean} recommended - Whether DS was recommended
@@ -79,7 +80,26 @@ function estimateCost(sourceName, totalTokens) {
 }
 
 /**
+ * Build a flat list of individual prompts from the query configuration.
+ * Each query can have multiple search terms — this expands them into
+ * one entry per term so the orchestrator can iterate linearly.
+ *
+ * @param {Array} queryList - Array of GeoQuery objects
+ * @returns {Array<{query: Object, searchTerm: string}>}
+ */
+function expandQueries(queryList) {
+  const expanded = [];
+  for (const query of queryList) {
+    for (const term of query.searchTerms) {
+      expanded.push({ query, searchTerm: term });
+    }
+  }
+  return expanded;
+}
+
+/**
  * Query a single LLM source for all configured queries and collect results.
+ * Each search term in each query is sent as a separate prompt.
  *
  * @param {Object} source - LLM source object
  * @param {Array} queryList - Queries to process
@@ -92,12 +112,17 @@ async function trackSource(source, queryList, dateStr) {
   let totalTokens = 0;
   const rows = [];
 
-  for (let i = 0; i < queryList.length; i++) {
-    const query = queryList[i];
-    const queryNum = i + 1;
-    const searchTerm = query.searchTerms[0];
+  const prompts = expandQueries(queryList);
 
-    console.log(`  [${queryNum}/${queryList.length}] "${query.name}" → "${searchTerm}"`);
+  for (let i = 0; i < prompts.length; i++) {
+    const { query, searchTerm } = prompts[i];
+    const promptNum = i + 1;
+
+    // Truncate long prompts in log output for readability
+    const displayTerm = searchTerm.length > 70
+      ? searchTerm.slice(0, 67) + '...'
+      : searchTerm;
+    console.log(`  [${promptNum}/${prompts.length}] "${query.name}" → "${displayTerm}"`);
 
     try {
       // Query the LLM
@@ -121,6 +146,7 @@ async function trackSource(source, queryList, dateStr) {
         query_name: query.name,
         query_id: query.id,
         category: query.category,
+        search_term: searchTerm,
         prominence_score: analysis.prominenceScore,
         mentioned: analysis.mentioned,
         recommended: analysis.recommended,
@@ -138,7 +164,7 @@ async function trackSource(source, queryList, dateStr) {
     }
 
     // Rate limiting between API calls (except after last one)
-    if (i < queryList.length - 1) {
+    if (i < prompts.length - 1) {
       await delay(source.rateLimitMs);
     }
   }
@@ -203,4 +229,4 @@ export async function runTracker(queries, sources) {
 }
 
 // Export internals for testing
-export { estimateCost, trackSource };
+export { estimateCost, trackSource, expandQueries };

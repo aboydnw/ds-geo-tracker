@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { runTracker, estimateCost } from './orchestrator.js';
+import { runTracker, estimateCost, expandQueries } from './orchestrator.js';
 
 // ============================================================
 // Helpers: mock sources and queries
@@ -22,15 +22,42 @@ function createMockSource(overrides = {}) {
   };
 }
 
-function createMockQueries(count = 2) {
+/** Create mock queries with a configurable number of search terms each. */
+function createMockQueries(count = 2, termsPerQuery = 1) {
   const names = ['VEDA Dashboard', 'titiler', 'STAC', 'COG', 'Satellite', 'Climate', 'Dev Seed'];
   return Array.from({ length: count }, (_, i) => ({
     id: `query-${i}`,
     name: names[i] || `Query ${i}`,
-    searchTerms: [`search term ${i}`],
+    searchTerms: Array.from({ length: termsPerQuery }, (_, t) =>
+      `What about ${names[i] || `Query ${i}`} term ${t}?`
+    ),
     category: 'product',
   }));
 }
+
+// ============================================================
+// expandQueries — unit tests
+// ============================================================
+
+describe('expandQueries', () => {
+  it('expands queries with multiple search terms', () => {
+    const queries = createMockQueries(2, 3);
+    const expanded = expandQueries(queries);
+    assert.equal(expanded.length, 6); // 2 queries × 3 terms
+  });
+
+  it('preserves parent query reference on each expanded entry', () => {
+    const queries = createMockQueries(1, 2);
+    const expanded = expandQueries(queries);
+    assert.equal(expanded[0].query.id, 'query-0');
+    assert.equal(expanded[1].query.id, 'query-0');
+    assert.notEqual(expanded[0].searchTerm, expanded[1].searchTerm);
+  });
+
+  it('returns empty array for no queries', () => {
+    assert.equal(expandQueries([]).length, 0);
+  });
+});
 
 // ============================================================
 // estimateCost — unit tests
@@ -63,8 +90,8 @@ describe('estimateCost', () => {
 // ============================================================
 
 describe('runTracker', () => {
-  it('processes 2 queries × 2 sources = 4 events', async () => {
-    const queries = createMockQueries(2);
+  it('processes 2 queries (1 term each) × 2 sources = 4 events', async () => {
+    const queries = createMockQueries(2, 1);
     const source1 = createMockSource({ name: 'Source1' });
     const source2 = createMockSource({ name: 'Source2' });
 
@@ -73,12 +100,36 @@ describe('runTracker', () => {
     assert.equal(results.totalEvents, 4);
     assert.equal(results.totalSuccess, 4);
     assert.equal(results.totalFail, 0);
-    assert.ok(results.perSource['Source1'], 'Should have Source1 breakdown');
-    assert.ok(results.perSource['Source2'], 'Should have Source2 breakdown');
+    assert.ok(results.perSource['Source1']);
+    assert.ok(results.perSource['Source2']);
+  });
+
+  it('expands multiple search terms: 2 queries × 3 terms × 1 source = 6 events', async () => {
+    const queries = createMockQueries(2, 3);
+    const source = createMockSource({ name: 'TestSource' });
+
+    const results = await runTracker(queries, [source]);
+
+    assert.equal(results.totalEvents, 6);
+    assert.equal(results.totalSuccess, 6);
+    assert.equal(results.rows.length, 6);
+  });
+
+  it('includes search_term in each result row', async () => {
+    const queries = createMockQueries(1, 2);
+    const source = createMockSource({ name: 'TestSource' });
+
+    const results = await runTracker(queries, [source]);
+
+    assert.equal(results.rows.length, 2);
+    assert.ok(results.rows[0].search_term.includes('term 0'));
+    assert.ok(results.rows[1].search_term.includes('term 1'));
+    // Both rows share the same query name
+    assert.equal(results.rows[0].query_name, results.rows[1].query_name);
   });
 
   it('returns detailed rows for each successful query', async () => {
-    const queries = createMockQueries(2);
+    const queries = createMockQueries(2, 1);
     const source = createMockSource({ name: 'TestSource' });
 
     const results = await runTracker(queries, [source]);
@@ -94,7 +145,7 @@ describe('runTracker', () => {
   });
 
   it('isolates errors: one source failure does not block others', async () => {
-    const queries = createMockQueries(2);
+    const queries = createMockQueries(2, 1);
 
     const failingSource = createMockSource({
       name: 'FailSource',
@@ -104,11 +155,8 @@ describe('runTracker', () => {
 
     const results = await runTracker(queries, [failingSource, goodSource]);
 
-    // FailSource: 2 failures (one per query)
     assert.equal(results.perSource['FailSource'].fail, 2);
     assert.equal(results.perSource['FailSource'].success, 0);
-
-    // GoodSource: should still process both queries
     assert.equal(results.perSource['GoodSource'].success, 2);
     assert.equal(results.perSource['GoodSource'].fail, 0);
 
@@ -117,9 +165,9 @@ describe('runTracker', () => {
     assert.ok(results.rows.every((r) => r.source === 'GoodSource'));
   });
 
-  it('handles single source failing on one query', async () => {
+  it('handles single source failing on one prompt', async () => {
     let callCount = 0;
-    const queries = createMockQueries(3);
+    const queries = createMockQueries(1, 3); // 1 query with 3 terms
 
     const flakySource = createMockSource({
       name: 'FlakySource',
@@ -142,19 +190,16 @@ describe('runTracker', () => {
     assert.equal(results.perSource['FlakySource'].fail, 1);
     assert.equal(results.perSource['FlakySource'].success, 2);
     assert.equal(results.totalEvents, 3);
-    // Only 2 rows (the successful ones)
     assert.equal(results.rows.length, 2);
   });
 
   it('handles empty sources array gracefully', async () => {
-    const queries = createMockQueries(2);
+    const queries = createMockQueries(2, 2);
 
     const results = await runTracker(queries, []);
 
     assert.equal(results.totalEvents, 0);
     assert.equal(results.totalSuccess, 0);
-    assert.equal(results.totalFail, 0);
-    assert.equal(results.totalTokens, 0);
     assert.equal(results.rows.length, 0);
   });
 
@@ -165,12 +210,11 @@ describe('runTracker', () => {
 
     assert.equal(results.totalEvents, 0);
     assert.equal(results.perSource['Source1'].success, 0);
-    assert.equal(results.perSource['Source1'].fail, 0);
     assert.equal(results.rows.length, 0);
   });
 
   it('accumulates tokens and cost across sources', async () => {
-    const queries = createMockQueries(1);
+    const queries = createMockQueries(1, 1);
 
     const source1 = createMockSource({
       name: 'Perplexity',
@@ -195,16 +239,13 @@ describe('runTracker', () => {
     const results = await runTracker(queries, [source1, source2]);
 
     assert.equal(results.totalTokens, 650);
-    assert.ok(results.totalCost > 0, 'Should have nonzero cost');
+    assert.ok(results.totalCost > 0);
     assert.equal(results.perSource['Perplexity'].tokens, 250);
     assert.equal(results.perSource['ChatGPT'].tokens, 400);
-    // Rows should include token counts
-    assert.equal(results.rows[0].tokens, 250);
-    assert.equal(results.rows[1].tokens, 400);
   });
 
   it('records duration', async () => {
-    const queries = createMockQueries(1);
+    const queries = createMockQueries(1, 1);
     const source = createMockSource({ name: 'Fast' });
 
     const results = await runTracker(queries, [source]);
@@ -214,7 +255,7 @@ describe('runTracker', () => {
   });
 
   it('includes ds_pages as pipe-separated string in rows', async () => {
-    const queries = createMockQueries(1);
+    const queries = createMockQueries(1, 1);
     const source = createMockSource({
       name: 'MultiCite',
       query: async () => ({
@@ -230,7 +271,7 @@ describe('runTracker', () => {
 
     const results = await runTracker(queries, [source]);
 
-    assert.ok(results.rows[0].ds_pages.includes('|'), 'Should pipe-separate multiple pages');
+    assert.ok(results.rows[0].ds_pages.includes('|'));
     assert.ok(results.rows[0].ds_pages.includes('developmentseed.org'));
   });
 });

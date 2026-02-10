@@ -19,6 +19,7 @@ function sampleRow(overrides = {}) {
     query_name: 'VEDA Dashboard',
     query_id: 'veda-dashboard',
     category: 'tools',
+    search_term: 'What is the VEDA dashboard and how is it used for NASA earth science data?',
     prominence_score: 90,
     mentioned: true,
     recommended: true,
@@ -85,7 +86,7 @@ describe('buildRow', () => {
     const line = buildRow(row);
     // Count columns carefully — quoted fields may contain commas
     // Simpler: verify field count matches HEADERS
-    assert.equal(HEADERS.length, 13);
+    assert.equal(HEADERS.length, 14);
   });
 });
 

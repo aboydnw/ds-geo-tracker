@@ -16,7 +16,7 @@ jobs:
   track:
     name: Track GEO Queries
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     
     steps:
       - name: Checkout repository

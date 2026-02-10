@@ -27,6 +27,7 @@ Results are stored in `data/results.csv` with these columns:
 | `query_name` | Human-readable query name |
 | `query_id` | Machine-readable query ID |
 | `category` | Query category (product, technology, trend, organization) |
+| `search_term` | The exact natural-language prompt sent to the LLM |
 | `prominence_score` | 0-100 score based on mention position, citations, recommendations |
 | `mentioned` | Whether Development Seed was mentioned |
 | `recommended` | Whether DS was recommended/endorsed |
