@@ -838,3 +838,63 @@ date,source,query_name,query_id,category,search_term,prominence_score,mentioned,
 2026-02-23,Claude,Climate Data,climate-data,trend,How can I visualize and explore climate datasets using open source tools?,0,false,false,0,0,training,,543
 2026-02-23,Claude,Climate Data,climate-data,trend,Best approaches for working with large-scale climate datasets in the cloud,0,false,false,0,0,training,,1044
 2026-02-23,Claude,Development Seed,development-seed,organization,Which companies are leaders in open source geospatial technology?,0,false,false,0,0,training,,371
+2026-02-24,Perplexity,lonboard,lonboard,product,What Python libraries can I use to create a dynamic map tile server?,80,true,true,1,1,web,https://developmentseed.org/titiler/,383
+2026-02-24,Perplexity,lonboard,lonboard,product,How can I view large vector datasets in a jupyter notebook?,0,false,false,0,0,web,,572
+2026-02-24,Perplexity,titiler,titiler,product,What is titiler and how does it serve map tiles from cloud-optimized geotiffs?,80,true,false,1,3,web,https://developmentseed.org/titiler/endpoints/cog/ | https://developmentseed.org/titiler/user_guide/getting_started/ | https://developmentseed.org/titiler/,605
+2026-02-24,Perplexity,titiler,titiler,product,Best open source tools for dynamic raster tile serving,80,true,true,1,1,web,https://developmentseed.org/titiler/,456
+2026-02-24,Perplexity,STAC,stac,technology,Open source tools for working with lots of geospatial data,0,false,false,0,0,web,,485
+2026-02-24,Perplexity,STAC,stac,technology,How do I implement STAC?,15,false,false,0,1,web,https://developmentseed.org/titiler/examples/notebooks/Working_with_STAC/,410
+2026-02-24,Perplexity,STAC,stac,technology,What tools and libraries exist for working with STAC APIs?,0,false,false,0,0,web,,574
+2026-02-24,Perplexity,Cloud Native Geospatial,cng,technology,How do I store and serve geospatial data in the cloud?,0,false,false,0,0,web,,482
+2026-02-24,Perplexity,Cloud Native Geospatial,cng,technology,Experts in Cloud Native Geospatial,65,true,true,1,0,web,,546
+2026-02-24,Perplexity,Cloud Native Geospatial,cng,technology,Best practices for storing raster data in the cloud,0,false,false,0,0,web,,692
+2026-02-24,Perplexity,Satellite Imagery,satellite-imagery,trend,What are the best open source tools for processing satellite imagery?,0,false,false,0,0,web,,469
+2026-02-24,Perplexity,Satellite Imagery,satellite-imagery,trend,What companies and organizations build tools for satellite imagery analysis?,0,false,false,0,0,web,,395
+2026-02-24,Perplexity,Climate Data,climate-data,trend,How can I visualize and explore climate datasets using open source tools?,0,false,false,0,0,web,,564
+2026-02-24,Perplexity,Climate Data,climate-data,trend,Best approaches for working with large-scale climate datasets in the cloud,0,false,false,0,0,web,,743
+2026-02-24,Perplexity,Development Seed,development-seed,organization,Which companies are leaders in open source geospatial technology?,0,false,false,0,0,web,,312
+2026-02-24,Gemini,lonboard,lonboard,product,What Python libraries can I use to create a dynamic map tile server?,65,true,true,1,0,web,,423
+2026-02-24,Gemini,lonboard,lonboard,product,How can I view large vector datasets in a jupyter notebook?,0,false,false,0,0,web,,613
+2026-02-24,Gemini,titiler,titiler,product,What is titiler and how does it serve map tiles from cloud-optimized geotiffs?,45,true,false,1,0,web,,346
+2026-02-24,Gemini,titiler,titiler,product,Best open source tools for dynamic raster tile serving,65,true,true,1,0,web,,236
+2026-02-24,Gemini,STAC,stac,technology,Open source tools for working with lots of geospatial data,0,false,false,0,0,web,,607
+2026-02-24,Gemini,STAC,stac,technology,How do I implement STAC?,0,false,false,0,0,web,,884
+2026-02-24,Gemini,STAC,stac,technology,What tools and libraries exist for working with STAC APIs?,38,true,false,2,0,web,,971
+2026-02-24,Gemini,Cloud Native Geospatial,cng,technology,How do I store and serve geospatial data in the cloud?,0,false,false,0,0,web,,1003
+2026-02-24,Gemini,Cloud Native Geospatial,cng,technology,Experts in Cloud Native Geospatial,0,false,false,0,0,web,,509
+2026-02-24,Gemini,Cloud Native Geospatial,cng,technology,Best practices for storing raster data in the cloud,0,false,false,0,0,web,,682
+2026-02-24,Gemini,Satellite Imagery,satellite-imagery,trend,What are the best open source tools for processing satellite imagery?,0,false,false,0,0,web,,483
+2026-02-24,Gemini,Satellite Imagery,satellite-imagery,trend,What companies and organizations build tools for satellite imagery analysis?,0,false,false,0,0,web,,629
+2026-02-24,Gemini,Climate Data,climate-data,trend,How can I visualize and explore climate datasets using open source tools?,0,false,false,0,0,web,,1025
+2026-02-24,Gemini,Climate Data,climate-data,trend,Best approaches for working with large-scale climate datasets in the cloud,0,false,false,0,0,web,,1049
+2026-02-24,Gemini,Development Seed,development-seed,organization,Which companies are leaders in open source geospatial technology?,0,false,false,0,0,web,,530
+2026-02-24,ChatGPT,lonboard,lonboard,product,What Python libraries can I use to create a dynamic map tile server?,0,false,false,0,0,web,,683
+2026-02-24,ChatGPT,lonboard,lonboard,product,How can I view large vector datasets in a jupyter notebook?,0,false,false,0,0,web,,840
+2026-02-24,ChatGPT,titiler,titiler,product,What is titiler and how does it serve map tiles from cloud-optimized geotiffs?,45,true,false,1,0,web,,843
+2026-02-24,ChatGPT,titiler,titiler,product,Best open source tools for dynamic raster tile serving,0,false,false,0,0,web,,635
+2026-02-24,ChatGPT,STAC,stac,technology,Open source tools for working with lots of geospatial data,0,false,false,0,0,web,,686
+2026-02-24,ChatGPT,STAC,stac,technology,How do I implement STAC?,0,false,false,0,0,web,,696
+2026-02-24,ChatGPT,STAC,stac,technology,What tools and libraries exist for working with STAC APIs?,0,false,false,0,0,web,,589
+2026-02-24,ChatGPT,Cloud Native Geospatial,cng,technology,How do I store and serve geospatial data in the cloud?,0,false,false,0,0,web,,873
+2026-02-24,ChatGPT,Cloud Native Geospatial,cng,technology,Experts in Cloud Native Geospatial,0,false,false,0,0,web,,667
+2026-02-24,ChatGPT,Cloud Native Geospatial,cng,technology,Best practices for storing raster data in the cloud,0,false,false,0,0,web,,779
+2026-02-24,ChatGPT,Satellite Imagery,satellite-imagery,trend,What are the best open source tools for processing satellite imagery?,0,false,false,0,0,web,,605
+2026-02-24,ChatGPT,Satellite Imagery,satellite-imagery,trend,What companies and organizations build tools for satellite imagery analysis?,0,false,false,0,0,web,,584
+2026-02-24,ChatGPT,Climate Data,climate-data,trend,How can I visualize and explore climate datasets using open source tools?,0,false,false,0,0,web,,828
+2026-02-24,ChatGPT,Climate Data,climate-data,trend,Best approaches for working with large-scale climate datasets in the cloud,0,false,false,0,0,web,,751
+2026-02-24,ChatGPT,Development Seed,development-seed,organization,Which companies are leaders in open source geospatial technology?,0,false,false,0,0,web,,560
+2026-02-24,Claude,lonboard,lonboard,product,What Python libraries can I use to create a dynamic map tile server?,58,true,true,2,0,training,,689
+2026-02-24,Claude,lonboard,lonboard,product,How can I view large vector datasets in a jupyter notebook?,0,false,false,0,0,training,,1019
+2026-02-24,Claude,titiler,titiler,product,What is titiler and how does it serve map tiles from cloud-optimized geotiffs?,45,true,false,1,0,training,,661
+2026-02-24,Claude,titiler,titiler,product,Best open source tools for dynamic raster tile serving,65,true,true,1,0,training,,907
+2026-02-24,Claude,STAC,stac,technology,Open source tools for working with lots of geospatial data,0,false,false,0,0,training,,772
+2026-02-24,Claude,STAC,stac,technology,How do I implement STAC?,0,false,false,0,0,training,,1039
+2026-02-24,Claude,STAC,stac,technology,What tools and libraries exist for working with STAC APIs?,0,false,false,0,0,training,,464
+2026-02-24,Claude,Cloud Native Geospatial,cng,technology,How do I store and serve geospatial data in the cloud?,50,true,true,3,0,training,,1046
+2026-02-24,Claude,Cloud Native Geospatial,cng,technology,Experts in Cloud Native Geospatial,50,true,true,3,0,training,,483
+2026-02-24,Claude,Cloud Native Geospatial,cng,technology,Best practices for storing raster data in the cloud,0,false,false,0,0,training,,1041
+2026-02-24,Claude,Satellite Imagery,satellite-imagery,trend,What are the best open source tools for processing satellite imagery?,0,false,false,0,0,training,,425
+2026-02-24,Claude,Satellite Imagery,satellite-imagery,trend,What companies and organizations build tools for satellite imagery analysis?,0,false,false,0,0,training,,386
+2026-02-24,Claude,Climate Data,climate-data,trend,How can I visualize and explore climate datasets using open source tools?,0,false,false,0,0,training,,593
+2026-02-24,Claude,Climate Data,climate-data,trend,Best approaches for working with large-scale climate datasets in the cloud,0,false,false,0,0,training,,1044
+2026-02-24,Claude,Development Seed,development-seed,organization,Which companies are leaders in open source geospatial technology?,0,false,false,0,0,training,,358
